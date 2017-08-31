@@ -14,6 +14,8 @@ from burp import ITextEditor
 from java.awt import Desktop
 from java.awt import Dimension
 from java.awt import EventQueue
+from java.awt import FlowLayout
+from java.awt import Component
 from java.awt.event import ActionListener
 from java.awt.event import MouseAdapter
 from java.lang import Runnable
@@ -31,7 +33,14 @@ from javax.swing import JTable
 from javax.swing import JTabbedPane
 from javax.swing import JTextArea
 from javax.swing import JTree
+from javax.swing import JFileChooser
+from javax.swing import JFrame
+from javax.swing import JPanel
+from javax.swing import JLabel
+from javax.swing import JButton
+from javax.swing import BoxLayout
 from javax.swing import SwingUtilities
+from javax.swing import SwingConstants
 from javax.swing.event import HyperlinkListener
 from javax.swing.event import ListSelectionListener
 from javax.swing.event import TableModelListener
@@ -57,6 +66,8 @@ class BurpExtender(IBurpExtender, IExtensionStateListener, IScannerCheck, ITab, 
     def __init__(self):
         self.issues = Issues()
         self.view = View(self.issues)
+        load_save_tab_frame = self.view.set_load_save_tab_frame()
+        self.view.tabbed_pane.setComponentAt(3, load_save_tab_frame.getContentPane())
 
     def registerExtenderCallbacks(self, callbacks):
         self.callbacks = callbacks
@@ -206,6 +217,7 @@ class View:
         tabbed_pane.add("Advisory", JScrollPane())
         tabbed_pane.add("Request", JScrollPane())
         tabbed_pane.add("Response", JScrollPane())
+        tabbed_pane.add("Load/Save Results", JScrollPane())
 
         self.tabbed_pane = tabbed_pane
 
@@ -332,6 +344,9 @@ class View:
         response_tab_pane = self.set_response_tab_pane(current_issue)
         tabbed_pane.setComponentAt(2, response_tab_pane)
 
+        load_save_tab_frame = self.set_load_save_tab_frame()
+        tabbed_pane.setComponentAt(3, load_save_tab_frame.getContentPane())
+
     def set_advisory_tab_pane(self, scanner_issue):
         advisory_pane = JEditorPane()
         advisory_pane.setEditable(False)
@@ -386,6 +401,51 @@ class View:
         self.set_context_menu(component, scanner_issue)
 
         return component
+
+    def set_load_save_tab_frame(self):
+        class LoadButtonListener(ActionListener):
+            def __init__(self):
+                pass
+
+            def actionPerformed(self, e):
+                fc = JFileChooser()
+                parent = fc.getParent()
+                fc.showOpenDialog(parent);
+
+        class SaveButtonListener(ActionListener):
+            def __init__(self):
+                pass
+            def actionPerformed(self, e):
+                fc = JFileChooser()
+                parent = fc.getParent()
+                fc.showOpenDialog(parent);
+
+        frame = JFrame()
+
+        panel = JPanel()
+        panel.setLayout(BoxLayout(panel, BoxLayout.Y_AXIS))
+
+        load_results = JLabel("<html><br>Load Previous Results<br><br></html>",SwingConstants.CENTER)
+        load_results.setAlignmentX(Component.CENTER_ALIGNMENT);
+        load_button = JButton()
+        load_button.setText("Load")
+        load_button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        load_button.addActionListener(LoadButtonListener())
+        panel.add(load_results)
+        panel.add(load_button)
+
+        save_results = JLabel("<html><br>Save Results<br><br></html>", SwingConstants.CENTER)
+        save_results.setAlignmentX(Component.CENTER_ALIGNMENT);
+        save_button = JButton()
+        save_button.setText("Save")
+        save_button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        save_button.addActionListener(SaveButtonListener())
+        panel.add(save_results)
+        panel.add(save_button)
+
+        frame.add(panel)
+
+        return frame
 
     # TODO: Remove this function and use the built-in Burp Suite context menu
     # Pass scanner_issue as argument
