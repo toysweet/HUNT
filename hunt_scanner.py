@@ -332,7 +332,6 @@ class View:
 
             if is_same_issue:
                 current_issue = scanner_issue
-                self.set_context_menu(request_list, scanner_issue)
                 break
 
         advisory_tab_pane = self.set_advisory_tab_pane(current_issue)
@@ -358,27 +357,9 @@ class View:
         advisory_pane.setText(advisory.format(scanner_issue.getUrl().encode("utf-8"),
                                          scanner_issue.getIssueDetail()))
 
-        # Set a context menu
-        self.set_context_menu(advisory_pane, scanner_issue)
-
         return JScrollPane(advisory_pane)
 
     def set_request_tab_pane(self, scanner_issue):
-        '''
-        raw_request = scanner_issue.getRequestResponse().getRequest()
-        request_body = StringUtil.fromBytes(raw_request)
-        request_body = request_body.encode("utf-8")
-
-        request_tab_textarea = self.callbacks.createTextEditor()
-        component = request_tab_textarea.getComponent()
-        request_tab_textarea.setText(request_body)
-        request_tab_textarea.setEditable(False)
-        request_tab_textarea.setSearchExpression(scanner_issue.getParameter())
-
-        # Set a context menu
-        self.set_context_menu(component, scanner_issue)
-        '''
-
         request_response = scanner_issue.getRequestResponse()
         controller = MessageController(request_response)
         message_editor = self.callbacks.createMessageEditor(controller, True)
@@ -388,17 +369,11 @@ class View:
         return component
 
     def set_response_tab_pane(self, scanner_issue):
-        raw_response = scanner_issue.getRequestResponse().getResponse()
-        response_body = StringUtil.fromBytes(raw_response)
-        response_body = response_body.encode("utf-8")
-
-        response_tab_textarea = self.callbacks.createTextEditor()
-        component = response_tab_textarea.getComponent()
-        response_tab_textarea.setText(response_body)
-        response_tab_textarea.setEditable(False)
-
-        # Set a context menu
-        self.set_context_menu(component, scanner_issue)
+        request_response = scanner_issue.getRequestResponse()
+        controller = MessageController(request_response)
+        message_editor = self.callbacks.createMessageEditor(controller, True)
+        message_editor.setMessage(request_response.getResponse(), False)
+        component = message_editor.getComponent()
 
         return component
 
@@ -446,28 +421,6 @@ class View:
         frame.add(panel)
 
         return frame
-
-    # TODO: Remove this function and use the built-in Burp Suite context menu
-    # Pass scanner_issue as argument
-    def set_context_menu(self, component, scanner_issue):
-        self.context_menu = JPopupMenu()
-
-        repeater = JMenuItem("Send to Repeater")
-        repeater.addActionListener(PopupListener(scanner_issue, self.callbacks))
-
-        intruder = JMenuItem("Send to Intruder")
-        intruder.addActionListener(PopupListener(scanner_issue, self.callbacks))
-
-        hunt = JMenuItem("Send to HUNT")
-
-        self.context_menu.add(repeater)
-        self.context_menu.add(intruder)
-
-        context_menu_listener = ContextMenuListener(component, self.context_menu)
-        component.addMouseListener(context_menu_listener)
-
-    def get_context_menu(self):
-        return self.context_menu
 
     def traverse_tree(self, tree, model, issue_name, issue_param, issue_count, total_count):
         root = model.getRoot()
@@ -571,7 +524,6 @@ class ScannerTableListener(TableModelListener):
                 self.view.set_scanner_count(self.issue_name, self.issue_param, issue_count, total_count)
             else:
                 self.view.set_scanner_count(self.issue_name, self.issue_param, issue_count, total_count)
-
 
 class ContextMenuListener(MouseAdapter):
     def __init__(self, component, context_menu):
